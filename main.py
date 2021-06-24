@@ -88,7 +88,7 @@ def recieveData():
     # sendData("AT+RX")
     # sendData("AT+ADDR=0003")
 
-
+#AT+CFG=433000000,20,9,10,4,1,0,0,0,0,3000,8,10
     #while True:
         #print("sending..")
         #ser.write("AT+SEND=5\r\n".encode())

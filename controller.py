@@ -14,6 +14,8 @@ class Controller():
     waitingForRREPlist = list()
     lifeTime = 5
     tosend = ""
+    payloadLength = 0
+    id = 0;
 
     def send(data):
         str(data)
@@ -28,6 +30,7 @@ class Controller():
             inpList = inp.split("=")
             if (inpList[0] == "AT+SEND"):
                 Controller.sendMode = True
+                Controller.payloadLength = int(inpList[1])
             elif (inpList[0] == "AT+ADDR"):
                 Controller.sendMode = False
                 Controller.myAddr = int(inpList[1])
@@ -38,7 +41,8 @@ class Controller():
                 if (data.DataManager.table.__contains__(Controller.destAddr) == False):  # not route found -> send RREQ
                     Controller.waitingForRREPlist.append(Controller.destAddr)
                     Controller.send("AT+DEST=FFFF")
-                    Message.sendRREQ(0, 0, Controller.myAddr, ++(Controller.seqNr), Controller.destAddr, 0)
+                    Controller.seqNr += 1
+                    Message.sendRREQ(0, 0,id, Controller.myAddr, Controller.seqNr, Controller.destAddr, 0)
                 else:
                     Controller.send("AT+DEST=" + str(Controller.destAddr))
             elif (Controller.sendMode):
@@ -50,30 +54,37 @@ class Controller():
                     Controller.tosend = ""
                 else:
                     Controller.send("AT+DEST=FFFF")
-                    Message.sendRREQ(0, 0, Controller.myAddr, ++(Controller.seqNr), Controller.destAddr, 0)
+                    Controller.seqNr += 1
+                    Message.sendRREQ(0, 0,id, Controller.myAddr, Controller.seqNr, Controller.destAddr, 0)
                     Controller.tosend = inpList[0]
             else:
                 Controller.send(inp)
 
     def parseRecieved(self, response):
         receivedCommandWords = self.response.split(",")
-        print("Controller: " + str(receivedCommandWords))
+        print("Controller: " + str(receivedCommandWords) + str(len(receivedCommandWords)))
 
         if len(receivedCommandWords) == 4:
             if receivedCommandWords[0] == "LR":
-                Controller.sender = ord(receivedCommandWords[1])
-                if (ord(receivedCommandWords[3][
-                            0]) == 1):  # RREQ {type, uFlag, hopCount, originAddr, originSeq, destAddr, destSeq}
-                    originAddr = ord(receivedCommandWords[3][3])
+                Controller.sender = int(receivedCommandWords[1])
+                print(int(receivedCommandWords[3][0]))
+                if (ord(receivedCommandWords[3][0])-'0' == 1):  # RREQ {type, uFlag, hopCount,id , originAddr, originSeq, destAddr, destSeq}
+                    print(ord(receivedCommandWords[3][0]))
+                    uFlag = ord(receivedCommandWords[3][1])
                     hopCnt = ord(receivedCommandWords[3][2])
-                    originSeq = ord(receivedCommandWords[3][4])
+                    id = ord(receivedCommandWords[3][3])
+                    originAddr = ord(receivedCommandWords[3][4])
+                    originSeq = ord(receivedCommandWords[3][5])
                     senderAddr = ord(receivedCommandWords[1])
-                    destAddr = ord(receivedCommandWords[3][5])
-                    destSeq = ord(receivedCommandWords[3][6])
+                    destAddr = ord(receivedCommandWords[3][6])
+                    destSeq = ord(receivedCommandWords[3][7])
+                    print("RREQ Empfangen " + "Sender: " + str(senderAddr) + "OriginAddr: " + str(originAddr) + "destAddr: " + str(destAddr))
                     if (originAddr != Controller.myAddr):
                         if (destAddr == Controller.myAddr):  # i am the distination
                             Controller.send("AT+DEST=" + str(senderAddr))
-                            Message.sendRREP(++hopCnt, originAddr, Controller.myAddr, ++(Controller.seqNr),
+                            hopCnt += 1
+                            Controller.seqNr += 1
+                            Message.sendRREP(hopCnt, originAddr, Controller.myAddr, Controller.seqNr,
                                              Controller.lifeTime)
                         elif (data.DataManager.table.__contains__(destAddr)):  # send unicast to the sender
                             # send RREP to the sender
@@ -83,7 +94,9 @@ class Controller():
                         else:
                             data.DataManager.pendingRREP[(originAddr, destAddr)] = True
                             Controller.send("AT+DEST=FFFF")
-                            Message.sendRREQ(0, ++hopCnt, originAddr, originSeq, destAddr, destSeq)
+                            print(hopCnt)
+                            hopCnt += 1
+                            Message.sendRREQ(0, hopCnt,id, originAddr, originSeq, destAddr, destSeq)
 
                 elif (ord(receivedCommandWords[3][
                               0]) == 2):  # RREP [type, hopCount, originAddr, destAddr, destSeq, lifetime]
@@ -92,7 +105,7 @@ class Controller():
                     destAddr = ord(receivedCommandWords[3][3])
                     destSeq = ord(receivedCommandWords[3][4])
                     lifeTime = ord(receivedCommandWords[3][5])
-                    sender = ord(receivedCommandWords[1])
+                    sender = int(receivedCommandWords[1])
 
                     # hier ack must be sended to the sender
                     Controller.send("AT+DEST=" + str(sender))
@@ -106,22 +119,28 @@ class Controller():
                             Message.sendRREP(++hopCnt, originAddr, destAddr, destSeq, lifeTime)
 
                 elif (ord(receivedCommandWords[3][0]) == 5):
+
                     originAddr = ord(receivedCommandWords[3][1])
                     destAddr = ord(receivedCommandWords[3][2])
                     seqNr = ord(receivedCommandWords[3][3])
-                    payload = ord(receivedCommandWords[3][4])
-
+                    messageLen = len(receivedCommandWords[3]) - 4
+                    # print(messageLen)
+                    payload = receivedCommandWords[3][4]
+                    for x in range(5, 4 + messageLen):
+                        payload += receivedCommandWords[3][x]
+                    print(payload)
+                # print(receivedCommandWords[3][5])
                     Controller.send("AT+DEST=" + str(Controller.sender))
                     Message.sendTextHopACK(seqNr)
 
                     print("recieved from " + str(Controller.sender) + "destination is " + str(
-                        destAddr) + "-> " + payload)
+                        destAddr) + "-> " + str(payload))
 
                     if (destAddr == Controller.myAddr):
                         Controller.send("AT+DEST=" + str(Controller.sender))
                         Message.sendTextRequestACK(originAddr, destAddr, seqNr)
                         print("recieved from " + str(Controller.sender) + "destination is me " + str(
-                            destAddr) + "-> " + payload)
+                            destAddr) + "-> " + str(payload))
                     else:  # muss weitergeleitet werden
                         if (data.DataManager.table.__contains__(destAddr)):
                             # send to the next hop
