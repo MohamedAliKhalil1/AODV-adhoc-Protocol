@@ -4,6 +4,7 @@ import serial
 import time
 import json
 
+
 class Controller():
     ser = serial
     myAddr = 0
@@ -14,8 +15,8 @@ class Controller():
     waitingForRREPlist = list()
     lifeTime = 5
     tosend = ""
+    id = 1
     payloadLength = 0
-    id = 0;
 
     def send(data):
         str(data)
@@ -24,7 +25,7 @@ class Controller():
         time.sleep(1)
 
     def parseInput(self, inp):
-        if(inp == "table"):
+        if (inp == "table"):
             print("I know now: " + json.dumps(data.DataManager.table))
         else:
             inpList = inp.split("=")
@@ -42,7 +43,7 @@ class Controller():
                     Controller.waitingForRREPlist.append(Controller.destAddr)
                     Controller.send("AT+DEST=FFFF")
                     Controller.seqNr += 1
-                    Message.sendRREQ(0, 0,id, Controller.myAddr, Controller.seqNr, Controller.destAddr, 0)
+                    Message.sendRREQ(0, 0, 1, Controller.myAddr, Controller.seqNr, Controller.destAddr, 0)
                 else:
                     Controller.send("AT+DEST=" + str(Controller.destAddr))
             elif (Controller.sendMode):
@@ -55,31 +56,34 @@ class Controller():
                 else:
                     Controller.send("AT+DEST=FFFF")
                     Controller.seqNr += 1
-                    Message.sendRREQ(0, 0,id, Controller.myAddr, Controller.seqNr, Controller.destAddr, 0)
+                    Message.sendRREQ(0, 0, 1, Controller.myAddr, Controller.seqNr, Controller.destAddr, 0)
                     Controller.tosend = inpList[0]
             else:
                 Controller.send(inp)
 
     def parseRecieved(self, response):
         receivedCommandWords = self.response.split(",")
-        print("Controller: " + str(receivedCommandWords) + str(len(receivedCommandWords)))
+        print("Controller: " + str(receivedCommandWords))
 
         if len(receivedCommandWords) == 4:
             if receivedCommandWords[0] == "LR":
                 Controller.sender = int(receivedCommandWords[1])
-                print(int(receivedCommandWords[3][0]))
-                if (ord(receivedCommandWords[3][0])-'0' == 1):  # RREQ {type, uFlag, hopCount,id , originAddr, originSeq, destAddr, destSeq}
-                    print(ord(receivedCommandWords[3][0]))
+                print(ord(receivedCommandWords[3][0]))
+                if (ord(receivedCommandWords[3][
+                            0]) == 1):  # RREQ {type, uFlag, hopCount, originAddr, originSeq, destAddr, destSeq}
+
                     uFlag = ord(receivedCommandWords[3][1])
                     hopCnt = ord(receivedCommandWords[3][2])
                     id = ord(receivedCommandWords[3][3])
                     originAddr = ord(receivedCommandWords[3][4])
                     originSeq = ord(receivedCommandWords[3][5])
-                    senderAddr = ord(receivedCommandWords[1])
+                    senderAddr = int(receivedCommandWords[1])
                     destAddr = ord(receivedCommandWords[3][6])
                     destSeq = ord(receivedCommandWords[3][7])
-                    print("RREQ Empfangen " + "Sender: " + str(senderAddr) + "OriginAddr: " + str(originAddr) + "destAddr: " + str(destAddr))
+                    print("RREQ Empfangen " + " Sender: " + str(senderAddr) + " OriginAddr: " + str(
+                        originAddr) + " destAddr: " + str(destAddr))
                     if (originAddr != Controller.myAddr):
+                        print(Controller.myAddr)
                         if (destAddr == Controller.myAddr):  # i am the distination
                             Controller.send("AT+DEST=" + str(senderAddr))
                             hopCnt += 1
@@ -94,9 +98,8 @@ class Controller():
                         else:
                             data.DataManager.pendingRREP[(originAddr, destAddr)] = True
                             Controller.send("AT+DEST=FFFF")
-                            print(hopCnt)
                             hopCnt += 1
-                            Message.sendRREQ(0, hopCnt,id, originAddr, originSeq, destAddr, destSeq)
+                            Message.sendRREQ(0, hopCnt, '1', originAddr, originSeq, destAddr, destSeq)
 
                 elif (ord(receivedCommandWords[3][
                               0]) == 2):  # RREP [type, hopCount, originAddr, destAddr, destSeq, lifetime]
@@ -119,17 +122,18 @@ class Controller():
                             Message.sendRREP(++hopCnt, originAddr, destAddr, destSeq, lifeTime)
 
                 elif (ord(receivedCommandWords[3][0]) == 5):
-
                     originAddr = ord(receivedCommandWords[3][1])
                     destAddr = ord(receivedCommandWords[3][2])
                     seqNr = ord(receivedCommandWords[3][3])
+                    # payload = receivedCommandWords[3][4]
                     messageLen = len(receivedCommandWords[3]) - 4
                     # print(messageLen)
                     payload = receivedCommandWords[3][4]
                     for x in range(5, 4 + messageLen):
                         payload += receivedCommandWords[3][x]
                     print(payload)
-                # print(receivedCommandWords[3][5])
+                    # print(receivedCommandWords[3][5])
+
                     Controller.send("AT+DEST=" + str(Controller.sender))
                     Message.sendTextHopACK(seqNr)
 
@@ -148,16 +152,16 @@ class Controller():
                             Message.sendTextRequest(originAddr, destAddr, seqNr, payload)
 
         # x = Message()
-          #  x.sendRREQ(1, 1, 1, 1, 1, 1)
-         #   Controller.send("AT+RSSI?")
-        #elif receivedCommandWords[0] == "AT":
-            #table[DataManager.sender] = receivedCommandWords[1]
-            #message = "hi " + DataManager.sender + " " + "quality is " + receivedCommandWords[1]
-            #Controller.send("AT+SEND=" + str(len(message)))
-            #Controller.send(message)
-            #message = "I know now: " + json.dumps(data.DataManager.table)
-            #time.sleep(2)
-            #Controller.send("AT+SEND=" + str(len(message)))
-           # print(DataManager.table)
+        #  x.sendRREQ(1, 1, 1, 1, 1, 1)
+        #   Controller.send("AT+RSSI?")
+        # elif receivedCommandWords[0] == "AT":
+        # table[DataManager.sender] = receivedCommandWords[1]
+        # message = "hi " + DataManager.sender + " " + "quality is " + receivedCommandWords[1]
+        # Controller.send("AT+SEND=" + str(len(message)))
+        # Controller.send(message)
+        # message = "I know now: " + json.dumps(data.DataManager.table)
+        # time.sleep(2)
+        # Controller.send("AT+SEND=" + str(len(message)))
+        # print(DataManager.table)
 
 
