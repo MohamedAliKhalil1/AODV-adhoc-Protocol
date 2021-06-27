@@ -45,7 +45,7 @@ class Message():
                             Message.convert_to_bytes(destAddr),
                             Message.convert_to_bytes(destSeq),
                             Message.convert_to_bytes(lifetime),
-                            b"\r\n"])
+                            ])
 
         Message.sendData(("AT+SEND=" + str(len(message)) + "\r\n").encode())
         Message.sendData(message)
@@ -63,7 +63,7 @@ class Message():
                             Message.convert_to_bytes(destSeq),
                             Message.convert_to_bytes(additionalAddr),
                             Message.convert_to_bytes(additionalSeq),
-                            b"\r\n"])
+                            ])
 
         Message.sendData(("AT+SEND=" + str(len(message)) + "\r\n").encode())
         Message.sendData(message)
@@ -76,7 +76,7 @@ class Message():
         # Message.sendData(array.decode())
 
         message = b"".join([Message.convert_to_bytes(4),
-                            b"\r\n"])
+                            ])
 
         Message.sendData(("AT+SEND=" + str(len(message)) + "\r\n").encode())
         Message.sendData(message)
@@ -99,7 +99,7 @@ class Message():
                             Message.convert_to_bytes(destAddr),
                             Message.convert_to_bytes(seqNr),
                             Message.convert_to_bytes(payload),
-                            b"\r\n"])
+                            ])
 
         Message.sendData(("AT+SEND=" + str(len(message)) + "\r\n").encode())
         Message.sendData(message)
@@ -113,7 +113,7 @@ class Message():
 
         message = b"".join([Message.convert_to_bytes(6),
                             Message.convert_to_bytes(seqNr),
-                            b"\r\n"])
+                            ])
 
         Message.sendData(("AT+SEND=" + str(len(message)) + "\r\n").encode())
         Message.sendData(message)
@@ -129,7 +129,7 @@ class Message():
                             Message.convert_to_bytes(originAddr),
                             Message.convert_to_bytes(destAddr),
                             Message.convert_to_bytes(seqNr),
-                            b"\r\n"])
+                            ])
 
         Message.sendData(("AT+SEND=" + str(len(message)) + "\r\n").encode())
         Message.sendData(message)

@@ -9,18 +9,30 @@ import json
 
 def checkNieghbours():
     table = data.DataManager.table
+    destChekNum = {}
     while True:
-        Controller.threadLock.acquire()
-        # [dest -> [hopCnt, destSeq, lifeTime, nextHop , valid] ]
         for dest in table:
+            if destChekNum.__contains__(dest) == False:
+                destChekNum[dest] = 1
+            else:
+                destChekNum[dest] = destChekNum[dest] + 1
             if datetime.now().timestamp() > table[dest][2]: #turn the route to unvalid
                 table[dest][4] = False;
                 Controller.send("AT+DEST=FFFF")
                 Controller.seqNr = (Controller.seqNr + 1) % 256
                 table[dest][1] = (table[dest][1]+1)%256
                 Message.sendRREQ(0, 0, 1, Controller.myAddr, Controller.seqNr, Controller.destAddr, table[dest][1])
-        Controller.threadLock.release()
-        time.sleep(10)
+            else:
+                destChekNum[dest] = 0
+            if(destChekNum[dest] > 3 and table[dest][4] == False): #RRER -> Typ, destCnt, destAddr, destSeq, additionalAddr, additionalSeq
+                Controller.send("AT+DEST=FFFF")
+                Controller.seqNr = (Controller.seqNr + 1) % 256
+                Message.sendRERR(1, dest, table[dest][1], dest, table[dest[1]])
+                for d in table:
+                    if table[d][3] == dest:
+                        table.pop(d)
+
+        time.sleep(7)
 
 
 class Controller():
@@ -85,8 +97,8 @@ class Controller():
                 Controller.send(inp)
 
     def parseRecieved(self, response):
-        time.sleep(0.5)
-        Controller.threadLock.acquire()
+       # time.sleep(0.5)
+       # Controller.threadLock.acquire()
         receivedCommandWords = self.response.split(",")
         print("Controller: " + str(receivedCommandWords))
 
@@ -202,8 +214,8 @@ class Controller():
                             # send to the next hop
                             Controller.send("AT+DEST=" + str(data.DataManager.table[destAddr][3]))
                             Message.sendTextRequest(originAddr, destAddr, seqNr, payload)
-        Controller.threadLock.release()
-        time.sleep(0.5)
+     #   Controller.threadLock.release()
+      #  time.sleep(0.5)
 
         # x = Message()
         #  x.sendRREQ(1, 1, 1, 1, 1, 1)
