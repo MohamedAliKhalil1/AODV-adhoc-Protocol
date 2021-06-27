@@ -134,11 +134,11 @@ class Message():
         Message.sendData(("AT+SEND=" + str(len(message)) + "\r\n").encode())
         Message.sendData(message)
 
-    def convert_to_bytes(inp):
-        if isinstance(inp, str):
-            return inp.encode()
-        elif isinstance(inp, int):
-            return bytes([inp])
+   # def convert_to_bytes(inp):
+    #    if isinstance(inp, str):
+     #       return inp.encode()
+      #  elif isinstance(inp, int):
+       #     return chr(int)
 
     def sendData(data):
         str(data)
@@ -146,5 +146,9 @@ class Message():
         Message.ser.write(data)
         time.sleep(1)
 
-
+    def convert_to_bytes(inp):
+        if isinstance(inp, str):
+            return inp.encode()
+        elif isinstance(inp, int):
+            return bytes([inp])
 

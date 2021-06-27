@@ -18,12 +18,9 @@ class DataManager (threading.Thread):
 
     def run(self):
         self.threadLock.acquire()
-        controller.Controller.parseRecieved(self, response)
+        controller.Controller.parseRecieved(self.response)
         self.threadLock.release()
 
 
-        str(data)
-        data += "\r\n"
-        self.ser.write(data.encode())
-        sleep(1)
+
 

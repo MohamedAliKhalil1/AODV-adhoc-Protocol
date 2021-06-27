@@ -3,6 +3,8 @@ import threading
 import serial
 #import RPi.GPIO as GPIO
 from time import sleep
+from controller import checkNieghbours
+import controller
 import guiController
 from data import DataManager
 import message
@@ -19,6 +21,7 @@ def getInput():
         print("sending -> " + inp)
         guiController.updateSentCommandsListBox(inp)
         #sendRREQ(1, 1, 1, 1, 1, 1)
+        
         sendData(inp)
 
 def sendData(data):
@@ -72,11 +75,14 @@ def recieveData():
     Controller.ser = ser
 
 
+
     guiController.guiInit()
     listener = threading.Thread(target=getInput)
     listener.start()
     reciever = threading.Thread(target=recieveData)
     reciever.start()
+    neighbourChecker = threading.Thread(target=checkNieghbours)
+    neighbourChecker.start()
     guiController.guiDisplay()
 
 ############################################################################################
