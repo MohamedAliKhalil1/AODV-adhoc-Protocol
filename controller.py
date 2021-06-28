@@ -28,7 +28,7 @@ def checkNieghbours():
                 Controller.send("AT+DEST=FFFF")
                 Controller.seqNr = (Controller.seqNr + 1) % 256
                 Message.sendRERR(1, dest, table[dest][1], dest, table[dest[1]])
-                for d in table:
+                for d in table.copy():
                     if table[d][3] == dest:
                         table.pop(d)
 
