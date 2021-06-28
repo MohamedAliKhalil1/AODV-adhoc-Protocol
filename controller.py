@@ -11,7 +11,8 @@ def checkNieghbours():
     table = data.DataManager.table
     destChekNum = {}
     while True:
-        for dest in table:
+        table_copy = {**table}
+        for dest, item in table_copy.items():
             if destChekNum.__contains__(dest) == False:
                 destChekNum[dest] = 1
             else:
@@ -27,10 +28,15 @@ def checkNieghbours():
             if(destChekNum[dest] > 3 and table[dest][4] == False): #RRER -> Typ, destCnt, destAddr, destSeq, additionalAddr, additionalSeq
                 Controller.send("AT+DEST=FFFF")
                 Controller.seqNr = (Controller.seqNr + 1) % 256
-                Message.sendRERR(1, dest, table[dest][1], dest, table[dest[1]])
-                for d in table.copy():
-                    if table[d][3] == dest:
-                        table.pop(d)
+                Message.sendRERR(1, dest, table[dest][1], dest, table[dest][1])
+                key_copy = tuple(table.keys())
+                for k in key_copy:
+                    if k == dest or table[k][3] == dest:
+                        del table[k]
+              #  for d in table.copy():
+                #    if table[d][3] == dest:
+               #         table.pop(d)
+
 
         time.sleep(7)
 
@@ -84,7 +90,7 @@ class Controller():
                     # send uni cast to the next hop of the dest
                     Controller.send("AT+DEST=" + str(data.DataManager.table[Controller.destAddr][3]))
                     Controller.seqNr = (Controller.seqNr + 1)%256
-                    Message.sendTextRequest(Controller.myAddr, Controller.destAddr, Controller.seqNr, Controller.seqNr, inpList[0])
+                    Message.sendTextRequest(Controller.myAddr, Controller.destAddr, Controller.seqNr, inpList[0])
                     Controller.sendMode = False
                     Controller.tosend = ""
                 else:
